@@ -68,8 +68,8 @@ def trackMarkers(frame):
     kernel = np.ones((3,3),np.uint8)
     dilate = cv.dilate(edged, kernel, iterations = 1)
     contours, hierarchy = cv.findContours(dilate, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
-    cv.drawContours(image=frame, contours=contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv.LINE_AA)
-    cv.imshow("xd2", frame)
+    #cv.drawContours(image=frame, contours=contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv.LINE_AA)
+    #cv.imshow("xd2", frame)
     markers = []
     for c in contours:
         if float(cv.arcLength(c, True)) > 10 and float(cv.arcLength(c, True)) < 40:
@@ -98,7 +98,6 @@ def straightLines(frame, x1, y1, x2, y2, x3, y3):
     frame = normalize(frame)
     cv.line(frame, [x1, y1], [x2, y2], (255, 0, 0), 2)
     cv.line(frame, [x1, y1], [x3, y3], (0, 255, 0), 2)   
-    #cv.imshow("hui3", frame) 
     return math.degrees(math.acos((((-a ** 2 + b ** 2 + c ** 2) / (2 * b * c)))))
 
 
@@ -124,12 +123,10 @@ class ProcessImage:
     def DetectObject(self, markerIndex):
 
         vid = cv.VideoCapture(0)
-
         if(vid.isOpened() == False):
             print('Cannot open input video')
             return
 
-        vid = normalize(vid)
         width = int(vid.get(3))
         height = int(vid.get(4))
 
@@ -139,11 +136,14 @@ class ProcessImage:
 
         while(vid.isOpened()):
             rc, frame = vid.read()
+            #frame = normalize(frame)7
 
             if(rc == True):
                 [ballX, ballY] = trackRobot(frame)
                 predictedCoords = kfObj.Estimate(ballX, ballY)
-                [markerX, markerY] = trackMarkers[markerIndex]
+                markers = trackMarkers[markerIndex]
+                if markers.size() > 0:
+                    [markerX, markerY] = markers[markerIndex]
                 print(straightLines(frame, ballX, ballY, predictedCoords[0], predictedCoords[1], markerX, markerY))
 
                 # Draw Actual coords from segmentation
@@ -201,7 +201,7 @@ class ProcessImage:
 def main():
 
     processImg = ProcessImage()
-    processImg.DetectObject()
+    processImg.DetectObject(0)
 
 
 if __name__ == "__main__":
