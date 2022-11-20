@@ -1,8 +1,10 @@
 ОПИСАНИЕ КОДА:
-Реализация кода для распознования местоположения в пронстранства путем сканирвоания с камеры, и построении траектории движения с помощью точек ориентиров.
+Реализация кода для распознования местоположения в пронстранства путем сканирвоания с камеры,
+и построении траектории движения с помощью точек ориентиров.
 
 ОПИСАНИЕ ФУНКЦИЙ:
-1) матиматическая функция - осонвоана на теореме косинусов. Теорему косиносов мы используем для определения угла между направления движения и прямой от обьекта до конечной точки маршрута. Реализация данной функции представлена ниже:
+1) матиматическая функция - осонвоана на теореме косинусов. Теорему косиносов мы используем для определения угла между
+направления движения и прямой от обьекта до конечной точки маршрута. Реализация данной функции представлена ниже:
 
 def straightLines(frame, x1, y1, x2, y2, x3, y3):
     aX = math.fabs(x2 - x3)
@@ -24,9 +26,40 @@ def straightLines(frame, x1, y1, x2, y2, x3, y3):
     cv.line(frame, [x1, y1], [x3, y3], (0, 255, 0), 2)   
     return math.degrees(math.acos((((-a ** 2 + b ** 2 + c ** 2) / (2 * b * c)))))
 
+2) Функция для выявления маркеров ( пометки, ориентиры и т.д.).  Работа данной функции осущствяется за счет увелечения яркости
+и изменнение перспективы поступающего изображения на вход. Далее изображения в черно белый формат, для выявления нужных обьектов,
+после чгео, функция обработав программу выводит исходное изображения с выделением нужных обьктов. Настройки маркера можно изменять,
+что делает нашу функцию универсальной. Ниже представлена ее реализация:
 
+def trackMarkers(frame):
+    
+    alpha = 2 # контраст
+    beta = 20    # яркость
 
-2)
+    frame = cv.convertScaleAbs(frame, alpha=alpha, beta=beta)
+    cv.imshow("xdBright", frame)
+    kernel = np.ones((5,5), np.float32) / 25
+    dst = cv.GaussianBlur(frame,(5,5),0)
+
+    dst = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
+
+    #output = cv2.cvtColor(output, cv2.COLOR_HSV2BGR)
+    ret, thresh = cv.threshold(dst, 127, 255, 0)
+
+    edged = cv.Canny(thresh, 30, 200)
+    #5x5 kernel with full of ones
+    kernel = np.ones((3,3),np.uint8)
+    dilate = cv.dilate(edged, kernel, iterations = 1)
+    contours, hierarchy = cv.findContours(dilate, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+    #cv.drawContours(image=frame, contours=contours, contourIdx=-1, color=(0, 255, 0), thickness=2, lineType=cv.LINE_AA)
+    #cv.imshow("xd2", frame)
+    markers = []
+    for c in contours:
+        if float(cv.arcLength(c, True)) > 10 and float(cv.arcLength(c, True)) < 40:
+            M = cv.moments(c)
+            cX = int(M["m10"] / M["m00"])
+            cY = int(M["m01"] / M["m00"])
+            markers.append([cX, cY])
 
 
 ПЕРСПЕКТИВЫ РАЗВИТИЯ И НЕДОСТАТКИ:
